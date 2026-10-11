@@ -786,12 +786,12 @@ class MainWindow(QMainWindow):
         self._actions.sync_find(opened=self._cache is not None, asking=self._filters.asking())
 
     def incomplete_action(self, shown: bool) -> None:
-        if self._cache is None:
+        model = self._model
+
+        if model is None:
             return
 
-        # letting the rest of the cache in moves every row after the first of
-        # them, so there is no place to come back to
-        self.repopulate(to_end=shown)
+        self.hiding_applied(applied=model.set_incomplete_hidden(not shown))
 
     def sync_incomplete(self) -> None:
         self._actions.incomplete.setEnabled(self._cache is not None)
@@ -805,7 +805,10 @@ class MainWindow(QMainWindow):
         if model is None:
             return
 
-        if not model.set_simple_hidden(not shown):
+        self.hiding_applied(applied=model.set_simple_hidden(not shown))
+
+    def hiding_applied(self, *, applied: bool) -> None:
+        if not applied:
             self._status.set_summary(SCANNING_MESSAGE)
             return
 
@@ -1286,17 +1289,19 @@ class MainWindow(QMainWindow):
         if self._cache is None:
             return
 
-        incomplete = self.showing_incomplete()
-        textures = [texture for texture in self._cache if incomplete or texture.whole()]
-
-        self._view.set_message("Cache is empty")
-
         old_model = self._view.model()
 
         if isinstance(old_model, TextureModel):
             old_model.shutdown()
 
-        model = TextureModel(textures, self._cache, self._known, self._view.devicePixelRatioF(), self)
+        model = TextureModel(
+            list(self._cache),
+            self._cache,
+            self._known,
+            self._view.devicePixelRatioF(),
+            self,
+            incomplete_hidden=not self.showing_incomplete(),
+        )
         model.full_ready.connect(self.ready_action)
         model.preview_ready.connect(self.preview_ready_action)
         model.ranked.connect(self.ranked_action)
@@ -1327,6 +1332,7 @@ class MainWindow(QMainWindow):
         model.set_reference(self._filters.reference())
         model.set_filters(self._filters.colors())
 
+        self.sync_empty()
         self.sync_export()
 
         if model.matching:

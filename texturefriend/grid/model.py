@@ -153,16 +153,21 @@ class TextureModel(QAbstractListModel):
         known: KnownTraits,
         ratio: float = 1.0,
         parent: QObject | None = None,
+        *,
+        incomplete_hidden: bool = False,
     ):
         super().__init__(parent)
 
         self._textures = list(textures)
         self._lookup = {texture.uuid: texture for texture in self._textures}
-        self._filtered_textures = self._textures
-        self._filtered_rows = {texture.uuid: row for row, texture in enumerate(self._filtered_textures)}
         # what is being asked of the grid, and what the scan found to answer
         # it with
-        self._narrowing = Narrowing()
+        self._narrowing = Narrowing(
+            incomplete=frozenset(row for row, texture in enumerate(self._textures) if not texture.whole()),
+            incomplete_hidden=incomplete_hidden,
+        )
+        self._filtered_textures = [self._textures[row] for row in self._narrowing.candidates(len(self._textures))]
+        self._filtered_rows = {texture.uuid: row for row, texture in enumerate(self._filtered_textures)}
         # the textures the scan found no picture in, which are left out of the
         # grid or ringed in it depending on what the menu says
         self._simple: set[str] = set()
@@ -198,6 +203,10 @@ class TextureModel(QAbstractListModel):
 
         self._scan = CacheScan(self._textures, known, self)
         self._scan.done.connect(self.scanned)
+
+        if not incomplete_hidden:
+            self._scan.read_incomplete()
+
         self._scan.start()
 
     @property
@@ -214,7 +223,7 @@ class TextureModel(QAbstractListModel):
         return 0 if parent.isValid() else len(self._filtered_textures)
 
     def total(self) -> int:
-        return len(self._textures)
+        return self._narrowing.total(len(self._textures))
 
     @property
     def narrowed(self) -> bool:
@@ -222,7 +231,7 @@ class TextureModel(QAbstractListModel):
 
     @property
     def scanning(self) -> bool:
-        return self._narrowing.asking and self._narrowing.scan is None
+        return self._narrowing.waiting
 
     @property
     def matching(self) -> bool:
@@ -496,6 +505,14 @@ class TextureModel(QAbstractListModel):
 
         return self.apply_filters()
 
+    def set_incomplete_hidden(self, hidden: bool) -> bool:
+        self._narrowing.incomplete_hidden = hidden
+
+        if not hidden:
+            self._scan.read_incomplete()
+
+        return self.apply_filters()
+
     def apply_filters(self) -> bool:
         kept = self._narrowing.shown_rows(len(self._textures))
 
@@ -522,15 +539,21 @@ class TextureModel(QAbstractListModel):
 
     @Slot(object)
     def scanned(self, scan: Scan) -> None:
+        first = self._narrowing.scan is None
+
         self._narrowing.scan = scan
-        self._simple = self._narrowing.flat_uuids([texture.uuid for texture in self._textures])
+
+        if first:
+            self._simple = self._narrowing.flat_uuids([texture.uuid for texture in self._textures])
+        elif self._narrowing.incomplete_hidden:
+            return
 
         if self._narrowing.asking and self.apply_filters():
             if self._narrowing.narrowed:
                 self.ranked.emit()
             else:
                 self.thinned.emit()
-        elif self._simple and self._filtered_textures:
+        elif first and self._simple and self._filtered_textures:
             # nothing is being narrowed, so no reset goes out to redraw the
             # grid, and the rows the scan just found no picture in would sit
             # there unringed until something else happened to touch them

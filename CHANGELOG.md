@@ -2,6 +2,10 @@
 
 all notable changes to this project are documented in this file.
 
+## unreleased
+
+- really fix simple textures being recalculated when showing incomplete textures
+
 ## v1.1.0 - 2026-10-10
 
 - zoom the preview window with a zoom/pan gestures

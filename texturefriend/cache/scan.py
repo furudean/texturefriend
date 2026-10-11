@@ -1,6 +1,7 @@
 import logging
 import time
-from collections.abc import Iterable, Iterator
+from collections import deque
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
@@ -36,6 +37,9 @@ class Scan:
 
     colors: ColorIndex
     likeness: LikenessIndex
+
+    # false until the incomplete textures are read
+    everything: bool = True
 
 
 @dataclass(frozen=True)
@@ -75,10 +79,21 @@ class CacheScan(QObject):
 
         self._known: KnownTraits = known if known is not None else {}
 
-        self._left: Iterator[tuple[int, Texture]] | None = enumerate(textures)
-
         self._colors = ColorIndex(len(textures))
         self._likeness = LikenessIndex(len(textures))
+
+        self._left: deque[tuple[int, Texture]] = deque()
+        self._held: list[tuple[int, Texture]] = []
+
+        for row, texture in enumerate(textures):
+            found = self._known.get(stamp(texture))
+
+            if found is not None:
+                self.file(row, found)
+            elif texture.whole():
+                self._left.append((row, texture))
+            else:
+                self._held.append((row, texture))
 
         # a zero interval fires once per pass of the event loop, so a slice runs
         # after whatever input and repaints were waiting
@@ -87,49 +102,47 @@ class CacheScan(QObject):
         self._timer.timeout.connect(self.step)
 
     def start(self) -> None:
+        self.step()
+        self.resume()
+
+    def read_incomplete(self) -> None:
+        self._left.extend(self._held)
+        self._held = []
+
         self.resume()
 
     def cancel(self) -> None:
-        self._left = None
+        self._left.clear()
+        self._held = []
         self._timer.stop()
 
     def pause(self) -> None:
         self._timer.stop()
 
     def resume(self) -> None:
-        if self._left is not None:
+        if self._left:
             self._timer.start()
 
     @Slot()
     def step(self) -> None:
-        left = self._left
-
-        if left is None:
-            return
-
         stop = time.perf_counter() + SLICE_SECONDS
 
-        for row, texture in left:
-            self.read(row, texture)
+        while self._left:
+            self.read(*self._left.popleft())
 
-            if time.perf_counter() >= stop:
+            if self._left and time.perf_counter() >= stop:
                 return
 
-        self.cancel()
-        self.done.emit(Scan(self._colors, self._likeness))
+        self._timer.stop()
+        self.done.emit(Scan(self._colors, self._likeness, everything=not self._held))
 
     def read(self, row: int, texture: Texture) -> None:
-        key = stamp(texture)
-        found = self._known.get(key)
+        found = self.traits(texture) or Traits(None, None)
+        self._known[stamp(texture)] = found
 
-        if found is None:
-            found = self.traits(texture)
+        self.file(row, found)
 
-            if found is None:
-                return
-
-            self._known[key] = found
-
+    def file(self, row: int, found: Traits) -> None:
         if found.signature is not None:
             self._colors.add(row, found.signature)
 

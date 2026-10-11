@@ -30,16 +30,30 @@ class Narrowing:
     # are being left out of the grid rather than only ringed in it
     simple_hidden: bool = False
 
+    incomplete: frozenset[int] = frozenset()
+    incomplete_hidden: bool = False
+
     # what the scan found, which is nothing until it lands
     scan: Scan | None = None
 
     @property
     def asking(self) -> bool:
-        return bool(self.colors) or self.reference is not None or self.simple_hidden
+        return self.searching or self.simple_hidden
+
+    @property
+    def searching(self) -> bool:
+        return bool(self.colors) or self.reference is not None
+
+    @property
+    def waiting(self) -> bool:
+        if self.scan is None:
+            return self.asking
+
+        return self.searching and not self.incomplete_hidden and not self.scan.everything
 
     @property
     def narrowed(self) -> bool:
-        return (bool(self.colors) or self.reference is not None) and self.scan is not None
+        return self.searching and self.scan is not None
 
     @property
     def matching(self) -> bool:
@@ -50,6 +64,15 @@ class Narrowing:
             return 0
 
         return len(self.scan.colors.flat)
+
+    def total(self, count: int) -> int:
+        return count - len(self.incomplete) if self.incomplete_hidden else count
+
+    def candidates(self, count: int) -> list[int]:
+        if not self.incomplete_hidden:
+            return list(range(count))
+
+        return [row for row in range(count) if row not in self.incomplete]
 
     def flat_uuids(self, uuids: list[str]) -> set[str]:
         if self.scan is None:
@@ -63,15 +86,17 @@ class Narrowing:
         and this is asked again when it does.
         """
 
-        if not self.asking:
-            return list(range(count))
+        rows = self.candidates(count)
 
-        if self.scan is None:
+        if not self.asking:
+            return rows
+
+        if self.waiting or self.scan is None:
             return None
 
         flat = self.scan.colors.flat if self.simple_hidden else set()
 
-        kept = [row for row in range(count) if row not in flat]
+        kept = [row for row in rows if row not in flat]
 
         # a picture is asked instead of the colours rather than inside them.
         # what a texture holds and what it looks like are different questions,

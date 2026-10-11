@@ -166,11 +166,10 @@ class TestForgetGone:
         assert list(known) == [stamp(held)]
 
 
-def known_scan(count: int) -> tuple[CacheScan, list[Scan]]:
+def unread_scan(count: int) -> tuple[CacheScan, list[Scan]]:
     textures = [entry(10, f"{row:036}") for row in range(count)]
-    known = {stamp(texture): Traits(None, None) for texture in textures}
 
-    found = CacheScan(textures, known)
+    found = CacheScan(textures)
     reports: list[Scan] = []
     found.done.connect(reports.append)
 
@@ -181,10 +180,11 @@ class TestSlices:
     @pytest.fixture(autouse=True)
     def one_texture_a_slice(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(scanning, "SLICE_SECONDS", 0)
+        monkeypatch.setattr(CacheScan, "traits", lambda _self, _texture: None)
 
     def test_a_scan_reports_once_however_often_it_is_resumed(self, app: QApplication) -> None:
         # every scroll that settles resumes the scan, finished or not
-        found, reports = known_scan(3)
+        found, reports = unread_scan(3)
 
         found.start()
 
@@ -195,7 +195,7 @@ class TestSlices:
         assert len(reports) == 1
 
     def test_a_cancelled_scan_never_reports(self, app: QApplication) -> None:
-        found, reports = known_scan(3)
+        found, reports = unread_scan(3)
 
         found.start()
         found.cancel()
