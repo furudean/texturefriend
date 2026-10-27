@@ -6,6 +6,7 @@ all notable changes to this project are documented in this file.
 
 - really fix simple textures being recalculated when showing incomplete textures
 - use much less memory indexing textures for search by picture
+- decode is ~20% faster
 
 ## v1.1.0 - 2026-10-10
 
