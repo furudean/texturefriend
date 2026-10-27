@@ -1,3 +1,4 @@
+import sys
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
@@ -173,6 +174,19 @@ def to_lab(rgb: int) -> Lab:
     return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
 
 
+@cache
+def binned(rgb: int) -> tuple[Lab, tuple[int, int, int]]:
+    """A rounded color in lab, beside the bin it is gathered into
+
+    Rounding to a bin is a cluster of the only kind a few hundred pixels can
+    support, and unlike a k-means it lands in the same place each run.
+    """
+
+    lightness, green_red, blue_yellow = lab = to_lab(rgb)
+
+    return lab, (round(lightness / BIN_L), round(green_red / BIN_AB), round(blue_yellow / BIN_AB))
+
+
 def lab_of(color: QColor) -> Lab:
     return to_lab((color.red() << 16) | (color.green() << 8) | color.blue())
 
@@ -195,6 +209,11 @@ def tightening(target_chroma: float) -> float:
     return cbrt(room * room)
 
 
+# where opacity sits among the four bytes of a word of argb, which lies in
+# memory whichever way round the machine keeps its words
+ALPHA_BYTE = 3 if sys.byteorder == "little" else 0
+
+
 def packed(image: QImage) -> bytes:
     """The image's pixels, as they were decoded"""
 
@@ -211,7 +230,7 @@ def counted(raw: bytes) -> Counter[int]:
     return Counter(memoryview(raw.translate(QUANTIZE)).cast("I"))
 
 
-def spans(distinct: set[int]) -> tuple[int, int]:
+def spans(raw: bytes) -> tuple[int, int]:
     """How far the colors and the opacities in an image stand apart, in raw levels
 
     Off the pixels as they were decoded rather than the rounded ones the color
@@ -221,14 +240,10 @@ def spans(distinct: set[int]) -> tuple[int, int]:
     from the rounding looking like a texture painted two.
     """
 
-    color = max(
-        max(levels) - min(levels)
-        for levels in ([(pixel >> shift) & 0xFF for pixel in distinct] for shift in (0, 8, 16))
-    )
+    channels = [raw[at::4] for at in range(4)]
+    opacities = channels.pop(ALPHA_BYTE)
 
-    opacities = [pixel >> 24 for pixel in distinct]
-
-    return color, max(opacities) - min(opacities)
+    return max(max(levels) - min(levels) for levels in channels), max(opacities) - min(opacities)
 
 
 @dataclass(frozen=True)
@@ -244,9 +259,8 @@ def signature(image: QImage) -> Signature | None:
         return None
 
     raw = packed(image)
-    distinct = set(memoryview(raw).cast("I"))
 
-    if not distinct:
+    if not raw:
         return None
 
     counts = counted(raw)
@@ -266,11 +280,7 @@ def signature(image: QImage) -> Signature | None:
         weight = count * (alpha / 255)
         shown += weight
 
-        lightness, green_red, blue_yellow = to_lab(pixel & 0xFFFFFF)
-
-        # rounding to a bin is a cluster of the only kind a few hundred pixels
-        # can support, and unlike a k-means it lands in the same place each run
-        key = (round(lightness / BIN_L), round(green_red / BIN_AB), round(blue_yellow / BIN_AB))
+        (lightness, green_red, blue_yellow), key = binned(pixel & 0xFFFFFF)
         bin = gathered.get(key)
 
         if bin is None:
@@ -293,7 +303,7 @@ def signature(image: QImage) -> Signature | None:
         for weight, lightness, green_red, blue_yellow in top
     ]
 
-    color, opacity = spans(distinct)
+    color, opacity = spans(raw)
 
     # the thumbnail is only half of it: the cache keeps some of them at a
     # single pixel, which is one solid color whatever it was reduced from, so
@@ -315,10 +325,13 @@ def merged(bins: Iterable[list[float]]) -> list[list[float]]:
     )
 
     kept: list[list[float]] = []
+    points: list[Lab] = []
 
     for weight, lightness, green_red, blue_yellow in centroids:
-        for into in kept:
-            if dist((lightness, green_red, blue_yellow), into[1:]) >= MERGE:
+        point = (lightness, green_red, blue_yellow)
+
+        for at, into in enumerate(kept):
+            if dist(point, points[at]) >= MERGE:
                 continue
 
             # where one bin would have put the centroid, had the edge not
@@ -328,10 +341,12 @@ def merged(bins: Iterable[list[float]]) -> list[list[float]]:
             into[1] = (into[1] * heavier + lightness * weight) / into[0]
             into[2] = (into[2] * heavier + green_red * weight) / into[0]
             into[3] = (into[3] * heavier + blue_yellow * weight) / into[0]
+            points[at] = (into[1], into[2], into[3])
 
             break
         else:
             kept.append([weight, lightness, green_red, blue_yellow])
+            points.append(point)
 
     return kept
 

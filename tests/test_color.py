@@ -1,5 +1,7 @@
 """Colour signatures and the index that answers queries against them"""
 
+from array import array
+
 from PySide6.QtGui import QColor, QImage
 
 from texturefriend.cache.color import (
@@ -120,21 +122,18 @@ class TestPixelReading:
         assert sorted(counts.values()) == [8, 8]
 
     def test_spans_of_a_flat_image_are_zero(self, app: object) -> None:
-        distinct = set(memoryview(packed(filled(QColor(0x40, 0x40, 0x40)))).cast("I"))
-
-        assert spans(distinct) == (0, 0)
+        assert spans(packed(filled(QColor(0x40, 0x40, 0x40)))) == (0, 0)
 
     def test_spans_report_the_widest_channel(self, app: object) -> None:
-        distinct = set(memoryview(packed(halved(QColor(0, 0, 0), QColor(200, 10, 10)))).cast("I"))
-        color, opacity = spans(distinct)
+        color, opacity = spans(packed(halved(QColor(0, 0, 0), QColor(200, 10, 10))))
 
         assert color == 200
         assert opacity == 0
 
     def test_spans_report_how_far_the_opacities_stand_apart(self, app: object) -> None:
-        distinct = {0xFFFF0000, 0x40FF0000}
+        raw = array("I", [0xFFFF0000, 0x40FF0000]).tobytes()
 
-        assert spans(distinct) == (0, 0xFF - 0x40)
+        assert spans(raw) == (0, 0xFF - 0x40)
 
 
 class TestSignature:

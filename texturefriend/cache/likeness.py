@@ -81,11 +81,15 @@ def squashed(image: QImage) -> list[tuple[float, float, float, float]]:
 
     # a row of 32 bit pixels is never padded, so the buffer is the pixels and
     # nothing besides, in the order a word of argb reads back in
-    for pixel in memoryview(bytes(scaled.constBits())).cast("I"):
+    raw = bytes(scaled.constBits())
+    pixels = memoryview(raw).cast("I")
+    quantized = memoryview(raw.translate(QUANTIZE)).cast("I")
+
+    for pixel, on_grid in zip(pixels, quantized, strict=True):
         alpha = pixel >> 24
 
         if alpha == 0xFF:
-            lightness, green_red, blue_yellow = to_lab(rounded(pixel & 0xFFFFFF))
+            lightness, green_red, blue_yellow = to_lab(on_grid & 0xFFFFFF)
         else:
             lightness, green_red, blue_yellow = to_lab(rounded(over_backdrop(pixel, alpha)))
 
@@ -112,7 +116,11 @@ def over_backdrop(pixel: int, alpha: int) -> int:
     shown = alpha / 255
     hidden = BACKDROP * (1 - shown)
 
-    return sum(round(((pixel >> shift) & 0xFF) * shown + hidden) << shift for shift in (16, 8, 0))
+    return (
+        round(((pixel >> 16) & 0xFF) * shown + hidden) << 16
+        | round(((pixel >> 8) & 0xFF) * shown + hidden) << 8
+        | round((pixel & 0xFF) * shown + hidden)
+    )
 
 
 def centred(values: list[float]) -> list[float]:
@@ -140,7 +148,7 @@ def scaled(deviation: list[float]) -> tuple[tuple[float, ...], float]:
     if reach < FAINTEST:
         return (0.0,) * len(deviation), 0.0
 
-    return tuple(value / reach for value in deviation), reach
+    return tuple([value / reach for value in deviation]), reach
 
 
 def layout(values: list[float]) -> tuple[tuple[float, ...], float]:
@@ -180,16 +188,16 @@ def describe(image: QImage) -> Descriptor | None:
     if image.isNull():
         return None
 
-    cells = squashed(image)
+    lightness, green_red, blue_yellow, opaqueness = map(list, zip(*squashed(image), strict=True))
 
-    light, contrast = layout([cell[0] for cell in cells])
-    opacity, shapeliness = layout([cell[3] for cell in cells])
+    light, contrast = layout(lightness)
+    opacity, shapeliness = layout(opaqueness)
 
     # the two colour channels are centred one at a time and only then laid end
     # to end, since a texture painted one flat colour sits high in one of them
     # and low in the other, and centring the pair together would read that as
     # a layout
-    chroma, colourfulness = scaled(centred([cell[1] for cell in cells]) + centred([cell[2] for cell in cells]))
+    chroma, colourfulness = scaled(centred(green_red) + centred(blue_yellow))
 
     return Descriptor(
         light=array("f", light),
@@ -198,11 +206,7 @@ def describe(image: QImage) -> Descriptor | None:
         contrast=contrast,
         colourfulness=colourfulness,
         shapeliness=shapeliness,
-        mean=(
-            sum(cell[0] for cell in cells) / CELLS,
-            sum(cell[1] for cell in cells) / CELLS,
-            sum(cell[2] for cell in cells) / CELLS,
-        ),
+        mean=(sum(lightness) / CELLS, sum(green_red) / CELLS, sum(blue_yellow) / CELLS),
     )
 
 
