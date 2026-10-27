@@ -16,6 +16,7 @@ the two are overall left to settle the ties.
 """
 
 import math
+from array import array
 from dataclasses import dataclass
 
 from PySide6.QtCore import QSize, Qt
@@ -153,15 +154,15 @@ class Descriptor:
     """What one picture is remembered by, once it is too small to be a picture"""
 
     # where the light and dark patches lie
-    light: tuple[float, ...]
+    light: array[float]
 
     # where the colour lies, as the two lab channels laid end to end and scaled
     # together, so that a texture with all its colour in one of them is not
     # halved for having none in the other
-    chroma: tuple[float, ...]
+    chroma: array[float]
 
     # where the texture is solid and where it is clear
-    opacity: tuple[float, ...]
+    opacity: array[float]
 
     # how far each of the three reached before it was scaled to unit length
     contrast: float
@@ -191,9 +192,9 @@ def describe(image: QImage) -> Descriptor | None:
     chroma, colourfulness = scaled(centred([cell[1] for cell in cells]) + centred([cell[2] for cell in cells]))
 
     return Descriptor(
-        light=light,
-        chroma=chroma,
-        opacity=opacity,
+        light=array("f", light),
+        chroma=array("f", chroma),
+        opacity=array("f", opacity),
         contrast=contrast,
         colourfulness=colourfulness,
         shapeliness=shapeliness,
