@@ -8,11 +8,13 @@
 TextureFriend is a cross-platform tool used to browse and export textures from
 Second Life.
 
-This application is useful if you want to modify existing assets, like for example
-character clothing, but the author does not provide a texture for download.
+This application is useful if you want to modify existing assets, like for
+example character clothing, but the author does not provide a texture for
+download.
 
-TextureFriend reads what is stored in your cache files. This requires you to have seen and fully loaded the item in Second Life before it will appear. It never
-connects to any Second Life servers directly.
+TextureFriend reads what is stored in your cache files. This requires you to
+have seen and fully loaded the item in Second Life before it will appear. It
+never connects to any Second Life servers directly.
 
 The app icon is by
 [@sferics32.bsky.social](https://bsky.app/profile/did:plc:omeuiwhg6nfnwdorlfxtszei).
