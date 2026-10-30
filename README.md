@@ -6,7 +6,7 @@
 </p>
 
 TextureFriend is a cross-platform tool used to browse and export textures
-from second life.
+from Second Life.
 
 this application is useful if you want to mod existing assets,
 like for example character clothing, but the author does not provide a texture to download.
