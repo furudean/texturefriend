@@ -58,5 +58,8 @@ jobs:
       - name: Mypy
         run: uv run poe types
 
+      - name: Check licences
+        run: uv run poe licences --check
+
       - name: Pytest
         run: uv run poe test

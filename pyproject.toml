@@ -62,8 +62,12 @@ help = "type check with mypy"
 cmd = "pytest"
 help = "run the test suite"
 
+[tool.poe.tasks.licences]
+cmd = "python scripts/licences"
+help = "rebuild the licence list from the installed packages"
+
 [tool.poe.tasks.check]
-sequence = ["lint", "fmt-check", "types", "test"]
+sequence = ["lint", "fmt-check", "types", { ref = "licences --check" }, "test"]
 help = "run all CI checks"
 
 [tool.pytest.ini_options]

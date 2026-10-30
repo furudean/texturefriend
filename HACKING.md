@@ -30,6 +30,15 @@ a script makes the app for the host platform. mac gets a `.app` windows
 | `patchelf`       | linux | nuitka to fix up the rpaths of the bundled qt libraries |
 | `libxcb-cursor0` | linux | nuitka to have a copy to bundle into the binary         |
 
+## licences
+
+the about window lists the licences of everything bundled into the app. after
+changing a runtime dependency, rebuild the list from the installed packages with
+
+```bash
+uv run poe licences
+```
+
 ## release
 
 pushing a version tag builds for all platforms and publishes the github release.
