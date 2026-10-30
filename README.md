@@ -1,7 +1,7 @@
 # TextureFriend
 
 <p align="center">
-  <img src="preview.png" width="600"
+  <img src="preview.png" width="700"
     alt="a screenshot of TextureFriend with a cache open">
 </p>
 
