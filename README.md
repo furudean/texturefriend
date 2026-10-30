@@ -14,7 +14,7 @@ character clothing, but the author does not provide a texture to download.
 TextureFriend can only read what is stored in your cache files. It never
 connects to any Second Life servers.
 
-The app's icon is by
+The app icon is by
 [@sferics32.bsky.social](https://bsky.app/profile/did:plc:omeuiwhg6nfnwdorlfxtszei).
 
 ## Features
