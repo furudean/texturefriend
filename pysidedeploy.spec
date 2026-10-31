@@ -69,13 +69,47 @@ mode = onefile
 
 # specify any extra nuitka arguments
 #
-# a number of unused codecs are excluded to shrink the build: the readers kept
-# are the ones a picture handed to the match is likely to arrive in, and pillow
-# is only asked to write png and tiff
-#
 # nuitka copies whatever the qt plugins link, so a reader nothing calls drags a
 # framework in behind it.
-extra_args = --quiet --noinclude-qt-translations --noinclude-qt-plugins=tls --include-package-data=texturefriend '--noinclude-dlls=*qpdf*' '--noinclude-dlls=*qtiff*' '--noinclude-dlls=*qtga*' '--noinclude-dlls=*qwbmp*' '--noinclude-dlls=*qicns*' '--noinclude-dlls=*qwebp*' '--noinclude-dlls=*qico.*' '--noinclude-dlls=*virtualkeyboard*' '--noinclude-dlls=*VirtualKeyboard*' '--noinclude-dlls=*Qt*Pdf*' '--noinclude-dlls=*Qt*Quick*' '--noinclude-dlls=*Qt*Qml*' '--noinclude-dlls=*Qt*Network*' '--noinclude-dlls=*qtuiotouch*' '--noinclude-dlls=*qvnc*' '--noinclude-dlls=*qminimal*' '--noinclude-dlls=*qeglfs*' '--noinclude-dlls=*qlinuxfb*' '--noinclude-dlls=*qvkkhrdisplay*' --nofollow-import-to=PIL.AvifImagePlugin --nofollow-import-to=PIL.WebPImagePlugin
+#
+# pyside6-deploy only strips // comments inside a value, # lines become args
+extra_args = --quiet
+	--noinclude-qt-translations
+	--include-package-data=texturefriend
+
+	// remove unused qt image readers
+	'--noinclude-dlls=*qpdf*'
+	'--noinclude-dlls=*qtiff*'
+	'--noinclude-dlls=*qtga*'
+	'--noinclude-dlls=*qwbmp*'
+	'--noinclude-dlls=*qicns*'
+	'--noinclude-dlls=*qwebp*'
+	'--noinclude-dlls=*qico.*'
+
+	// we only write png and tiff
+	--nofollow-import-to=PIL.AvifImagePlugin
+	--nofollow-import-to=PIL.WebPImagePlugin
+
+	// disable on-screen keyboard for touch devices
+	'--noinclude-dlls=*virtualkeyboard*'
+	'--noinclude-dlls=*VirtualKeyboard*'
+
+	// no pdf rendering, and the qml and quick engine
+	'--noinclude-dlls=*Qt*Pdf*'
+	'--noinclude-dlls=*Qt*Quick*'
+	'--noinclude-dlls=*Qt*Qml*'
+
+	// nothing talks to the network
+	--noinclude-qt-plugins=tls
+	'--noinclude-dlls=*Qt*Network*'
+	'--noinclude-dlls=*qtuiotouch*'
+	'--noinclude-dlls=*qvnc*'
+
+	// platforms with no window systems
+	'--noinclude-dlls=*qminimal*'
+	'--noinclude-dlls=*qeglfs*'
+	'--noinclude-dlls=*qlinuxfb*'
+	'--noinclude-dlls=*qvkkhrdisplay*'
 
 [buildozer]
 
