@@ -272,7 +272,7 @@ jobs:
             case "${path##*/}" in
               *macos-universal.dmg) label="macOS Application (universal, disk image)" ;;
               *macos-universal.zip) label="macOS Application (universal, archive)" ;;
-              *windows-x86_64.exe) label="Windows Executable (x86-64)" ;;
+              *windows-x86_64.zip) label="Windows Application (x86-64, archive)" ;;
               *linux-x86_64.AppImage) label="Linux AppImage (x86-64)" ;;
               *linux-x86_64) label="Linux Executable (x86-64)" ;;
               *)

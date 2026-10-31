@@ -33,21 +33,27 @@ mkdir -p "$EXEC_DIRECTORY"
 
 # nuitka wants .icns on mac, .ico on windows; on linux the onefile binary
 # can't embed one anyway, and appimage.sh installs slcachegirl.png itself
+mode=onefile
 case "$(uname -s)" in
 	Darwin) icon=packaging/slcachegirl.icns ;;
-	CYGWIN* | MINGW* | MSYS* | Windows_NT) icon=packaging/slcachegirl.ico ;;
+	CYGWIN* | MINGW* | MSYS* | Windows_NT)
+		icon=packaging/slcachegirl.ico
+		mode=standalone
+		extra_args="$extra_args '--output-filename=$NAME.exe'"
+		;;
 	*) icon= ;;
 esac
 
-awk -v extra="$extra_args" -v icon="$icon" '
+awk -v extra="$extra_args" -v icon="$icon" -v mode="$mode" '
 	/^extra_args = / { print $0 " " extra; next }
 	/^icon = / { print "icon = " icon; next }
+	/^mode = onefile$/ { print "mode = " mode; next }
 	{ print }
 ' "$spec" > "$generated_spec"
 
 uv run python scripts/generate-metadata
 
-rm -rf "$EXEC_DIRECTORY/$NAME.app" "$EXEC_DIRECTORY/$NAME.exe" "$EXEC_DIRECTORY/$NAME.bin"
+rm -rf "$EXEC_DIRECTORY/$NAME.app" "$EXEC_DIRECTORY/$NAME.exe" "$EXEC_DIRECTORY/$NAME.dist" "$EXEC_DIRECTORY/$NAME.bin"
 
 uv run pyside6-deploy --config-file "$generated_spec" --name "$NAME" --force
 

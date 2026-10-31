@@ -18,7 +18,8 @@ uv run poe check
 ## build
 
 a script makes the app for the host platform. mac gets a `.app` windows
-`.exe` and linux a binary/AppImage. cross-compiling is not supported.
+a folder with the `.exe` and linux a binary/AppImage. cross-compiling is not
+supported.
 
 ```bash
 ./scripts/build.sh

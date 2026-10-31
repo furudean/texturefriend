@@ -42,7 +42,9 @@ case "$(uname -s)" in
 		./scripts/macos-dmg.sh "$staging/$asset.dmg"
 		;;
 	CYGWIN* | MINGW* | MSYS* | Windows_NT)
-		cp "$EXEC_DIRECTORY/$NAME.exe" "$staging/$asset.exe"
+		cp -r "$EXEC_DIRECTORY/$NAME.dist" "$staging/$asset"
+		(cd "$staging" && uv run --no-project python -m zipfile -c "$asset.zip" "$asset")
+		rm -rf "$staging/$asset"
 		;;
 	Linux)
 		# the AppImage is the one to install, the bare binary is there for

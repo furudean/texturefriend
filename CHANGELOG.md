@@ -7,6 +7,7 @@ all notable changes to this project are documented in this file.
 - really fix simple textures being recalculated when showing incomplete textures
 - use much less memory indexing textures for search by picture
 - decode is ~20% faster
+- windows ships as a zip of the app folder instead of a single exe, which defender flagged as a trojan
 
 ## v1.1.0 - 2026-10-10
 
