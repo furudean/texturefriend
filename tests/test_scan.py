@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -28,7 +28,7 @@ def entry(image_size: int, uuid: str = "0" * 36, *, whole: bool = True) -> Textu
 
     return Texture(
         index=0,
-        entry=Entry(uuid=uuid, image_size=image_size, body_size=body_size, time=datetime.now()),
+        entry=Entry(uuid=uuid, image_size=image_size, body_size=body_size, time=datetime.now(UTC)),
         cache=cast("TextureCache", SimpleNamespace(cache_dir=Path("nowhere"))),
     )
 
