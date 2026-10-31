@@ -19,7 +19,7 @@ file = "numpy.txt"
 [[license]]
 name = "pillow"
 licence = "MIT-CMU"
-homepage = "https://python-pillow.github.io"
+homepage = "https://python-pillow.org"
 file = "pillow.txt"
 
 [[license]]

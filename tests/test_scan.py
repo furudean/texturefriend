@@ -28,7 +28,7 @@ def entry(image_size: int, uuid: str = "0" * 36, *, whole: bool = True) -> Textu
 
     return Texture(
         index=0,
-        entry=Entry(uuid=uuid, image_size=image_size, body_size=body_size, time=datetime.now()),  # noqa: DTZ005
+        entry=Entry(uuid=uuid, image_size=image_size, body_size=body_size, time=datetime.now()),
         cache=cast("TextureCache", SimpleNamespace(cache_dir=Path("nowhere"))),
     )
 
