@@ -75,7 +75,7 @@ mode = onefile
 #
 # nuitka copies whatever the qt plugins link, so a reader nothing calls drags a
 # framework in behind it.
-extra_args = --quiet --noinclude-qt-translations --include-package-data=texturefriend '--noinclude-dlls=*qpdf*' '--noinclude-dlls=*qtiff*' '--noinclude-dlls=*qtga*' '--noinclude-dlls=*qwbmp*' '--noinclude-dlls=*qicns*' '--noinclude-dlls=*qwebp*' '--noinclude-dlls=*qico.*' '--noinclude-dlls=*virtualkeyboard*' '--noinclude-dlls=*VirtualKeyboard*' '--noinclude-dlls=*Qt*Pdf*' '--noinclude-dlls=*Qt*Quick*' '--noinclude-dlls=*Qt*Qml*' --nofollow-import-to=PIL.AvifImagePlugin --nofollow-import-to=PIL.WebPImagePlugin
+extra_args = --quiet --noinclude-qt-translations --noinclude-qt-plugins=tls --include-package-data=texturefriend '--noinclude-dlls=*qpdf*' '--noinclude-dlls=*qtiff*' '--noinclude-dlls=*qtga*' '--noinclude-dlls=*qwbmp*' '--noinclude-dlls=*qicns*' '--noinclude-dlls=*qwebp*' '--noinclude-dlls=*qico.*' '--noinclude-dlls=*virtualkeyboard*' '--noinclude-dlls=*VirtualKeyboard*' '--noinclude-dlls=*Qt*Pdf*' '--noinclude-dlls=*Qt*Quick*' '--noinclude-dlls=*Qt*Qml*' '--noinclude-dlls=*Qt*Network*' '--noinclude-dlls=*qtuiotouch*' '--noinclude-dlls=*qvnc*' '--noinclude-dlls=*qminimal*' '--noinclude-dlls=*qeglfs*' '--noinclude-dlls=*qlinuxfb*' '--noinclude-dlls=*qvkkhrdisplay*' --nofollow-import-to=PIL.AvifImagePlugin --nofollow-import-to=PIL.WebPImagePlugin
 
 [buildozer]
 
