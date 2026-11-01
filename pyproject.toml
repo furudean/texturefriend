@@ -1,6 +1,6 @@
 [project]
 name = "texturefriend"
-version = "1.1.0"
+version = "1.2.0"
 description = "a cross-platform tool to browse and export textures from the second life texture cache"
 readme = "README.md"
 requires-python = ">=3.13"

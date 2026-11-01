@@ -2,7 +2,7 @@
 
 all notable changes to this project are documented in this file.
 
-## unreleased
+## v1.2.0 - 2026-11-01
 
 - really fix simple textures being recalculated when showing incomplete textures
 - use much less memory indexing textures for search by picture
