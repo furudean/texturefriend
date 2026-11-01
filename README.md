@@ -13,7 +13,7 @@ example character clothing, but the author does not provide a texture for
 download.
 
 TextureFriend reads what is stored in cache files on your computer. This
-requires you to have seen and fully loaded the item in Second Life before it
+requires you to have seen and fully loaded the texture in Second Life before it
 will appear. This app never connects to any Second Life servers.
 
 The app icon is by
