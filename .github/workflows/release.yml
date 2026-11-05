@@ -71,11 +71,9 @@ jobs:
             target: macos-x86_64
             python_architecture: x64
             rosetta: true
-            # uv 0.12.24 and later install arm64 wheels into the universal2
-            # python under rosetta
-            # https://github.com/astral-sh/uv/issues/13378
-            # https://github.com/astral-sh/uv/pull/21304
-            uv_version: 0.12.13
+            # uv 0.12.24 through 0.13.0 installed arm64 wheels into the
+            # universal2 python under rosetta. the cause was reverted, but
+            # https://github.com/astral-sh/uv/pull/22524 would restore it
           - os: windows-latest
             target: windows-x86_64
           - os: ubuntu-22.04
@@ -102,7 +100,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          version: ${{ matrix.uv_version }}
           enable-cache: true
 
       # Nuitka needs patchelf to fix up the rpaths of the bundled Qt libraries.
