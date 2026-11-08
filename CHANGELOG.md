@@ -2,6 +2,10 @@
 
 all notable changes to this project are documented in this file.
 
+## unreleased
+
+- preview window grows horizontally but is centered vertically when reshaping
+
 ## v1.2.0 - 2026-11-01
 
 - really fix simple textures being recalculated when showing incomplete textures

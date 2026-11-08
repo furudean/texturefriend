@@ -138,9 +138,9 @@ class PreviewWindow(ZoomableView):
         self._box: QSize | None = None
         self._shaped_size = QSize()
 
-        # the middle of where the window was last put by hand, which every
-        # shape is kept over
-        self._middle: QPoint | None = None
+        # the left edge and the vertical middle of where the window was last
+        # put by hand, which every shape is kept at
+        self._anchor: QPoint | None = None
         self._shaping = False
 
         self.setWindowTitle(WINDOW_TITLE)
@@ -241,32 +241,33 @@ class PreviewWindow(ZoomableView):
 
         try:
             self.resize(size)
-            self.centre()
+            self.anchor()
         finally:
             self._shaping = False
 
-    def centre(self) -> None:
+    def anchor(self) -> None:
         frame = self.frameGeometry()
-        middle = self._middle if self._middle is not None else frame.center()
+        anchor = self._anchor if self._anchor is not None else QPoint(frame.left(), frame.center().y())
 
-        left = middle.x() - frame.width() // 2
-        top = middle.y() - frame.height() // 2
+        left = anchor.x()
+        top = anchor.y() - frame.height() // 2
 
         room = self.room()
 
-        # a shape too big to be held over the middle by this is left on the
-        # screen instead, which is worth more than the middle of the box
+        # a shape too big to be held at the anchor is kept on the screen
+        # instead, which is worth more than the anchor
         if room is not None:
             left = nearest(left, frame.width(), room.left(), room.right())
             top = nearest(top, frame.height(), room.top(), room.bottom())
 
         self.move(left, top)
 
-    def remember_middle(self) -> None:
+    def remember_anchor(self) -> None:
         if self._shaping:
             return
 
-        self._middle = self.frameGeometry().center()
+        frame = self.frameGeometry()
+        self._anchor = QPoint(frame.left(), frame.center().y())
 
     def remember_box(self) -> None:
         # a resize that lands at the shaped size is the window system catching
@@ -280,7 +281,7 @@ class PreviewWindow(ZoomableView):
         super().resizeEvent(event)
 
         self.remember_box()
-        self.remember_middle()
+        self.remember_anchor()
         self.sync_title()
 
     def hideEvent(self, event: QHideEvent) -> None:
@@ -294,7 +295,7 @@ class PreviewWindow(ZoomableView):
     def moveEvent(self, event: QMoveEvent) -> None:
         super().moveEvent(event)
 
-        self.remember_middle()
+        self.remember_anchor()
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
