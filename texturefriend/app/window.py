@@ -166,6 +166,8 @@ class MainWindow(QMainWindow):
         self._inspector.exported.connect(lambda format: self.export_action(format, False))
         self._inspector.outgrown.connect(self._settle.start)
 
+        self._pane_width = INSPECTOR_WIDTH
+
         splitter = HairlineSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(self._view)
         splitter.addWidget(self._inspector)
@@ -923,10 +925,31 @@ class MainWindow(QMainWindow):
             self.scroll_to_end()
 
     def inspector_action(self, shown: bool) -> None:
-        self.sync_inspector()
-
         if shown:
+            view = self._view.width()
+            pane = self._pane_width
+
+            self.sync_inspector()
+            self.grow_by(pane + self._splitter.handleWidth())
+            self._splitter.setSizes([view, pane])
+
             self.fill_inspector()
+        else:
+            pane = self._splitter.sizes()[1]
+
+            self.sync_inspector()
+
+            if pane > 0:
+                self._pane_width = pane
+                self.grow_by(-pane - self._splitter.handleWidth())
+
+    def grow_by(self, width: int) -> None:
+        if self.isMaximized() or self.isFullScreen():
+            return
+
+        room = self.screen().availableGeometry().width() - (self.frameGeometry().width() - self.width())
+
+        self.resize(min(self.width() + width, room), self.height())
 
     def sync_inspector(self) -> None:
         opened = self._cache is not None
@@ -934,11 +957,11 @@ class MainWindow(QMainWindow):
         self._actions.inspector.setEnabled(opened)
         self._inspector.setVisible(opened and self._actions.inspector.isChecked())
 
-        # a pane dragged shut stays shut when shown again, so it opens back up
-        # at its usual width
+        # a pane comes back with no width of its own, so it opens back up at
+        # the width it was hidden at
         if self._inspector.isVisible() and self._splitter.sizes()[1] == 0:
             whole = sum(self._splitter.sizes())
-            self._splitter.setSizes([whole - INSPECTOR_WIDTH, INSPECTOR_WIDTH])
+            self._splitter.setSizes([whole - self._pane_width, self._pane_width])
 
     def inspector_dragged_action(self) -> None:
         # dragging the hairline all the way over hides the pane, and the menu

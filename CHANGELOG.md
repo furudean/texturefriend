@@ -5,6 +5,7 @@ all notable changes to this project are documented in this file.
 ## unreleased
 
 - preview window grows horizontally but is centered vertically when reshaping
+- inspector being shown or hidden will adjust the window's size
 
 ## v1.2.0 - 2026-11-01
 
