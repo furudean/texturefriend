@@ -6,7 +6,7 @@ all notable changes to this project are documented in this file.
 
 - preview window grows horizontally but is centered vertically when reshaping
 - inspector being shown or hidden will adjust the window's size
-- suggest caches from more viewers, including firestormos, megapahit, black
+- suggest caches from more viewers, including firestorm for opensim, megapahit, black
   dragon, catznip, and second life on linux
 
 ## v1.2.0 - 2026-11-01
