@@ -163,7 +163,7 @@ class TextureModel(QAbstractListModel):
         # what is being asked of the grid, and what the scan found to answer
         # it with
         self._narrowing = Narrowing(
-            incomplete=frozenset(row for row, texture in enumerate(self._textures) if not texture.whole()),
+            incomplete=frozenset(row for row, texture in enumerate(self._textures) if not texture.complete),
             incomplete_hidden=incomplete_hidden,
         )
         self._filtered_textures = [self._textures[row] for row in self._narrowing.candidates(len(self._textures))]
@@ -270,7 +270,7 @@ class TextureModel(QAbstractListModel):
             return self.decoration(texture)
 
         if role == INCOMPLETE_ROLE:
-            return not texture.whole()
+            return not texture.complete
 
         if role == SIMPLE_ROLE:
             return texture.uuid in self._simple
@@ -278,7 +278,7 @@ class TextureModel(QAbstractListModel):
         if role == Qt.ItemDataRole.ToolTipRole:
             lines = [texture.uuid, format_time(texture.time)]
 
-            if not texture.whole():
+            if not texture.complete:
                 lines.append(f"Incomplete — {format_size(texture.cached_size)} of {format_size(texture.image_size)}")
 
             return "\n".join(lines)

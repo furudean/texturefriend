@@ -78,7 +78,7 @@ class FullDecodes:
         return wanted.width() <= had.width() and wanted.height() <= had.height()
 
     def wanted(self, texture: Texture, room: QSize | None) -> bool:
-        if not texture.whole() or texture.uuid in self._running:
+        if not texture.complete or texture.uuid in self._running:
             return False
 
         self._running[texture.uuid] = room
@@ -141,7 +141,7 @@ class PreviewDecodes:
         return None
 
     def wanted(self, texture: Texture) -> bool:
-        if not texture.whole() or texture.uuid in self._running:
+        if not texture.complete or texture.uuid in self._running:
             return False
 
         self._running.add(texture.uuid)

@@ -27,7 +27,7 @@ def grid_summary(model: TextureModel, entries: int, *, counting_incomplete: bool
 
     # both counts are of the rows the grid ended up with rather than of the
     # cache, since an entry left out of it is neither shown nor news
-    unfinished = sum(1 for row in range(shown) if not model.texture(row).whole()) if counting_incomplete else 0
+    unfinished = sum(1 for row in range(shown) if not model.texture(row).complete) if counting_incomplete else 0
 
     if unfinished:
         summary += f", {format_count(unfinished)} incomplete"

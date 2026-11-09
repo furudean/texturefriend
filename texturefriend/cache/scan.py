@@ -90,7 +90,7 @@ class CacheScan(QObject):
 
             if found is not None:
                 self.file(row, found)
-            elif texture.whole():
+            elif texture.complete:
                 self._left.append((row, texture))
             else:
                 self._held.append((row, texture))
@@ -185,7 +185,7 @@ class CacheScan(QObject):
         if found is None or not found.flat:
             return found
 
-        if not texture.whole() or self.dense(texture, kept, clear=found.clear):
+        if not texture.complete or self.dense(texture, kept, clear=found.clear):
             return replace(found, flat=False, clear=False)
 
         return found
@@ -197,7 +197,7 @@ class CacheScan(QObject):
         if kept.width * kept.height == 1:
             return texture.image_size > BLIND_BASE_BYTES
 
-        width, height = kept.source_dimensions
+        width, height = kept.texture_dimensions
         pixels = width * height
 
         if clear and pixels < CLEAR_MIN_PIXELS:

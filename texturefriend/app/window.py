@@ -465,9 +465,9 @@ class MainWindow(QMainWindow):
         # an entry the grid is not showing is neither news to report nor a row
         # to scroll to or take away, however much of it the viewer wrote
         if not self.showing_incomplete():
-            added = [texture for texture in added if texture.whole()]
-            rewritten = [texture for texture in rewritten if texture.whole()]
-            evicted = [texture for texture in evicted if texture.whole()]
+            added = [texture for texture in added if texture.complete]
+            rewritten = [texture for texture in rewritten if texture.complete]
+            evicted = [texture for texture in evicted if texture.complete]
 
         if not (added or rewritten or evicted):
             self._status.flash("No new textures found after reload")

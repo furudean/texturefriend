@@ -12,7 +12,7 @@ UUID = "0" * 36
 
 
 def texture() -> Texture:
-    return cast("Texture", SimpleNamespace(uuid=UUID, whole=lambda: True))
+    return cast("Texture", SimpleNamespace(uuid=UUID, complete=True))
 
 
 def landed(natural: QSize, decoded: QSize, room: QSize | None) -> FullDecodes:

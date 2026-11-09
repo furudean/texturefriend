@@ -87,7 +87,7 @@ class DecodeQueue:
 
         # an entry the cache never finished downloading has no codestream to
         # decode, so the thumbnail beside it in the cache is all there ever is
-        if not texture.whole():
+        if not texture.complete:
             return False
 
         if uuid in self._running or uuid in self._failed:

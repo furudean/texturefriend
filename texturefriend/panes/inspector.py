@@ -341,7 +341,7 @@ class InspectorPane(QWidget):
         # by any one of the items, and a uuid up here would only name the one
         # texture the sidebar happened to land on
         self._name.setText(f"{format_count(count)} items" if count > 1 else texture.uuid)
-        kind = "JPEG 2000 image" if texture.whole() else "JPEG 2000 thumbnail"
+        kind = "JPEG 2000 image" if texture.complete else "JPEG 2000 thumbnail"
 
         self._kind.setText(
             f"{format_count(count)} textures — {format_size(total)}"
@@ -383,7 +383,7 @@ class InspectorPane(QWidget):
 
         self.share_height()
 
-        if self._texture is not None and not self._texture.whole():
+        if self._texture is not None and not self._texture.complete:
             # nothing decodes half a codestream, so the shape is never known and
             # the thumbnail beside it in the cache is what the sidebar is showing
             self._dimensions.setText("Unknown")

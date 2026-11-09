@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -612,11 +612,11 @@ wheels = [
 
 [[package]]
 name = "texture-courier"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/46/6a/6cca14b413fdf4f3057ec79c3051fd35e3805bb11fd54d6fe0cc1744927c/texture_courier-0.2.0.tar.gz", hash = "sha256:eab5eb1ba5080b4ab2092e27e4ef1a3de9c5456097af99a8e9fe30304027e9ae", size = 22618, upload-time = "2026-10-04T19:59:41.498Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/32/832a81d27cd48e41978986336fe4cfabffab0736a08fc59c767063e84bf9/texture_courier-0.3.0.tar.gz", hash = "sha256:52a8f942b4b3caf54ff299b293ef8cae0523a41bb72b736d20497c1217944661", size = 23145, upload-time = "2026-11-09T02:07:08.106Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/c5/b74baf19707ff6300716be7d865a4f41825f5525b4dee519574ca83b9cb4/texture_courier-0.2.0-py3-none-any.whl", hash = "sha256:8ad974eeef71a03c7ea073c9fc9a1a1cf14088228e86b84bea5205ba63a69ed5", size = 19614, upload-time = "2026-10-04T19:59:40.425Z" },
+    { url = "https://files.pythonhosted.org/packages/23/3c/792013eb7c2b2f672a21c57c434e712755776584e7c5a0d6087b68571ac5/texture_courier-0.3.0-py3-none-any.whl", hash = "sha256:5e02df5961a514c39d19753058dfa1bd954afbd11e8d66d19f6da4ae716952ad", size = 19953, upload-time = "2026-11-09T02:07:07.213Z" },
 ]
 
 [[package]]
@@ -645,7 +645,7 @@ requires-dist = [
     { name = "imagecodecs", specifier = ">=2026.10.10" },
     { name = "pillow", specifier = ">=13.0.0" },
     { name = "pyside6", specifier = ">=6.12.0" },
-    { name = "texture-courier", specifier = ">=0.2.0" },
+    { name = "texture-courier", specifier = ">=0.3.0" },
 ]
 
 [package.metadata.requires-dev]

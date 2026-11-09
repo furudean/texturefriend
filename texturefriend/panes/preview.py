@@ -49,7 +49,7 @@ def preview_title(texture: Texture, natural: QSize, scale: float | None = None) 
         for part in (
             dimensions if not natural.isEmpty() else "",
             format_size(texture.image_size),
-            "" if texture.whole() else "incomplete",
+            "" if texture.complete else "incomplete",
         )
         if part
     )
@@ -180,7 +180,7 @@ class PreviewWindow(ZoomableView):
 
         self.sync_title()
 
-        if not texture.whole():
+        if not texture.complete:
             message = "Texture incomplete"
         else:
             message = "Could not decode" if decoded is not None else "Decoding..."
