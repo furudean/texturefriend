@@ -81,7 +81,12 @@ def main() -> None:
         return
 
     INDEX.write_text(index, encoding="utf-8")
-    print(f"wrote {len(entries)} licences to {INDEX}")
+
+    width = max(len(e["name"]) for e in entries)
+    for e in entries:
+        print(f"{e['name']:<{width}}  {e['licence']}")
+
+    print(f"\nwrote {len(entries)} licences to {INDEX}")
 
 
 if __name__ == "__main__":
