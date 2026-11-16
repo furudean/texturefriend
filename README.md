@@ -25,7 +25,6 @@ The app icon is by
 - Find a texture by similar image (i.e. a screenshot)
 - Save to disk in commonly-used image formats
 - Drag and drop
-- It's fast
 
 ## Install
 
