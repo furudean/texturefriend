@@ -65,7 +65,10 @@ the binaries attached.
 
 ## sign / notarize (mac only)
 
-signing needs a developer ID Application certificate in a keychain, as documented in the environment variables below
+signing needs a developer ID Application certificate in a keychain, as
+documented in the environment variables below. doing this requires a 
+[Apple Developer Program](https://developer.apple.com/help/account/certificates/certificates-overview/)
+membership.
 
 ```bash
 # build as normal
