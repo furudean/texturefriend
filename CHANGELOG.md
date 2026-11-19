@@ -2,6 +2,10 @@
 
 all notable changes to this project are documented in this file.
 
+## unreleased
+
+- open the current texture cache in system file manager from the file menu
+
 ## v1.3.0 - 2026-11-19
 
 - preview window grows horizontally but is centered vertically when reshaping

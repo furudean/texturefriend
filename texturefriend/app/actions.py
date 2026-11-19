@@ -49,6 +49,8 @@ EXPORT_KEY = QKeySequence("Ctrl+E")
 
 UUID_KEY = QKeySequence("Ctrl+Alt+C" if sys.platform == "darwin" else "Ctrl+Shift+C")
 
+FILE_MANAGER = {"darwin": "Finder", "win32": "Explorer"}.get(sys.platform, "File Manager")
+
 TONES = {
     CheckerTone.AUTO: ("&Automatic", "Match the checkerboard to the window's own colours"),
     CheckerTone.LIGHT: ("&Checkerboard (Light)", "Draw a light checkerboard behind the transparent parts of a texture"),
@@ -62,6 +64,7 @@ FORWARDED = (
     "opened",
     "reopened",
     "reloaded",
+    "shown_in_files",
     "exported",
     "copied",
     "uuid_copied",
@@ -79,7 +82,7 @@ The ticks are not among them: one of those is moved on the window's own entry
 instead, so that its menu goes on saying what its panes are doing.
 """
 
-MIRRORED = ("reload", "copy", "copy_uuid", "filter_color", "match", "paste", "disable")
+MIRRORED = ("reload", "show_in_files", "copy", "copy_uuid", "filter_color", "match", "paste", "disable")
 """The entries a window enables and disables as it goes, which the app-wide bar copies"""
 
 
@@ -150,6 +153,7 @@ class WindowActions(QObject):
     opened = Signal()
     reopened = Signal(Path)
     reloaded = Signal()
+    shown_in_files = Signal()
     exported = Signal(Format, bool)
     copied = Signal()
     uuid_copied = Signal()
@@ -202,6 +206,10 @@ class WindowActions(QObject):
         self.reload.setEnabled(False)
         triggers(self.reload, self.reloaded.emit)
 
+        self.show_in_files = QAction(f"Show in {FILE_MANAGER}", owner)
+        self.show_in_files.setEnabled(False)
+        triggers(self.show_in_files, self.shown_in_files.emit)
+
         close = QAction("&Close Window", owner)
         close.setShortcut(QKeySequence(QKeySequence.StandardKey.Close))
         close.setStatusTip("Close this window")
@@ -214,6 +222,7 @@ class WindowActions(QObject):
 
         file_menu.addSeparator()
         file_menu.addAction(self.reload)
+        file_menu.addAction(self.show_in_files)
 
         file_menu.addSeparator()
         file_menu.addAction(new)

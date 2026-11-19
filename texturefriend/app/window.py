@@ -16,6 +16,7 @@ from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QColor,
+    QDesktopServices,
     QDrag,
     QDragEnterEvent,
     QDragLeaveEvent,
@@ -217,6 +218,7 @@ class MainWindow(QMainWindow):
         self._actions.opened.connect(self.open_action)
         self._actions.reopened.connect(self.open_cache)
         self._actions.reloaded.connect(self.refresh_action)
+        self._actions.shown_in_files.connect(self.show_in_files_action)
         self._actions.exported.connect(self.export_action)
         self._actions.copied.connect(self.copy_action)
         self._actions.uuid_copied.connect(self.copy_uuid_action)
@@ -441,6 +443,10 @@ class MainWindow(QMainWindow):
 
         if dialog.exec():
             self.open_cache(Path(dialog.selectedFiles()[0]))
+
+    def show_in_files_action(self) -> None:
+        if self._cache is not None:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._cache.cache_dir)))
 
     def refresh_action(self) -> None:
         if self._cache is None:
@@ -1278,6 +1284,7 @@ class MainWindow(QMainWindow):
         self._known = {}
 
         self._actions.reload.setEnabled(True)
+        self._actions.show_in_files.setEnabled(True)
         self.sync_inspector()
         self.sync_preview()
         self.sync_filters()
