@@ -8,6 +8,8 @@ all notable changes to this project are documented in this file.
 - inspector being shown or hidden will adjust the window's size
 - suggest caches from more viewers, including firestorm for opensim, megapahit, black
   dragon, catznip, and second life on linux
+- sort textures by dimensions or disk size from the new sort menu
+- filters are consolidated under a filters menubar
 
 ## v1.2.0 - 2026-11-01
 

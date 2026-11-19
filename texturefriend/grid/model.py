@@ -23,6 +23,7 @@ from texturefriend.grid.cellcache import insert_cell, nearest_cell, remove_cells
 from texturefriend.grid.decodes import FULL_SIZE, FullDecodes, PreviewDecodes
 from texturefriend.grid.narrowing import Narrowing
 from texturefriend.grid.queue import DecodeQueue
+from texturefriend.grid.sorting import Order, sort_key
 from texturefriend.view.cellsize import cell_size
 from texturefriend.view.checkerboard import checkerboard_generation
 from texturefriend.view.formatting import format_size, format_time
@@ -160,6 +161,8 @@ class TextureModel(QAbstractListModel):
 
         self._textures = list(textures)
         self._lookup = {texture.uuid: texture for texture in self._textures}
+        self._positions = {texture.uuid: row for row, texture in enumerate(self._textures)}
+        self._keys: dict[Order, list[tuple[int, ...] | None]] = {}
         # what is being asked of the grid, and what the scan found to answer
         # it with
         self._narrowing = Narrowing(
@@ -499,6 +502,23 @@ class TextureModel(QAbstractListModel):
         self._narrowing.reference = describe(image) if image is not None else None
 
         return self.apply_filters()
+
+    def set_order(self, order: Order, *, descending: bool) -> None:
+        self._narrowing.order = order
+        self._narrowing.descending = descending
+
+        if order is not Order.CACHE:
+            if order not in self._keys:
+                self._keys[order] = [sort_key(texture, order) for texture in self._textures]
+
+            self._narrowing.keys = self._keys[order]
+
+        if self.apply_filters():
+            return
+
+        rows = sorted(self._positions[texture.uuid] for texture in self._filtered_textures)
+
+        self.reorder([self._textures[row] for row in self._narrowing.ordered(rows)])
 
     def set_simple_hidden(self, hidden: bool) -> bool:
         self._narrowing.simple_hidden = hidden

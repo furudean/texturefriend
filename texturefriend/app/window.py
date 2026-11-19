@@ -50,6 +50,7 @@ from texturefriend.grid.cellcache import remove_cells
 from texturefriend.grid.cells import CELL_PADDING, CellDelegate, TextureGrid
 from texturefriend.grid.model import TextureModel, sidebar_key
 from texturefriend.grid.prefetch import prefetch
+from texturefriend.grid.sorting import Order, SortChanges, sort_descending, sort_order
 from texturefriend.grid.summary import empty_message, narrowed_summary, ranked_summary
 from texturefriend.grid.summary import grid_summary as summary_of
 from texturefriend.panes.dropzone import DropZone
@@ -246,6 +247,8 @@ class MainWindow(QMainWindow):
 
         CellSizeChanges.shared().changed.connect(self.resize_cells)
 
+        SortChanges.shared().changed.connect(self.sort_action)
+
         # both entries come up out of their stored settings, before anything is
         # listening to them, so the pane and the window are put where the menu
         # already says they are here
@@ -326,6 +329,7 @@ class MainWindow(QMainWindow):
 
         CheckerboardChanges.shared().changed.disconnect(self.restyle)
         CellSizeChanges.shared().changed.disconnect(self.resize_cells)
+        SortChanges.shared().changed.disconnect(self.sort_action)
 
         if self._job is not None:
             self._job.shutdown()
@@ -830,15 +834,16 @@ class MainWindow(QMainWindow):
     def showing_simple(self) -> bool:
         return self._actions.simple.isChecked()
 
-    def narrowed(self) -> bool:
-        model = self._model
-
-        return model is not None and model.narrowed
-
     def ranking(self) -> bool:
         """Whether the grid is in an order something asked for, rather than the cache's"""
 
-        return bool(self._filters.colors()) or self._filters.reference() is not None
+        return self._filters.asking() or sort_order() is not Order.CACHE
+
+    def bottom_first(self) -> bool:
+        if sort_order() is not Order.CACHE:
+            return not sort_descending()
+
+        return not self._filters.asking()
 
     def filter_action(self, colors: list[QColor]) -> None:
         self.sync_find()
@@ -852,6 +857,16 @@ class MainWindow(QMainWindow):
             self.ranked_action()
         else:
             self._status.flash("Please wait...")
+
+    def sort_action(self) -> None:
+        model = self._model
+
+        if model is None:
+            return
+
+        model.set_order(sort_order(), descending=sort_descending())
+
+        self.ranked_action()
 
     def ranked_action(self) -> None:
         self.sync_empty()
@@ -873,18 +888,14 @@ class MainWindow(QMainWindow):
         self._status.set_summary(self.summary())
 
     def show_ranking(self) -> None:
-        """Take the grid to the top of the ranking, where the likest textures are
-
-        Nothing is selected there. A ranking is a reordering of the grid rather
-        than an answer to pick out of it, so which row the user ends up on stays
-        theirs to say.
-        """
-
         if self._model is None:
             return
 
-        self._view.unpin()
-        self._view.scrollToTop()
+        if self.bottom_first():
+            self.scroll_to_end()
+        else:
+            self._view.unpin()
+            self._view.scrollToTop()
 
     def summary(self) -> str:
         model = self._model
@@ -918,11 +929,8 @@ class MainWindow(QMainWindow):
         if current.isValid():
             self._view.unpin()
             self._view.scrollTo(current, QListView.ScrollHint.PositionAtCenter)
-        elif self.narrowed():
-            self._view.unpin()
-            self._view.scrollToTop()
         else:
-            self.scroll_to_end()
+            self.show_ranking()
 
     def inspector_action(self, shown: bool) -> None:
         if shown:
@@ -1351,6 +1359,7 @@ class MainWindow(QMainWindow):
         if preview is not None and MainWindow._app.preview.followed_by(self):
             preview.clear()
 
+        model.set_order(sort_order(), descending=sort_descending())
         model.set_simple_hidden(not self.showing_simple())
         model.set_reference(self._filters.reference())
         model.set_filters(self._filters.colors())
@@ -1358,10 +1367,8 @@ class MainWindow(QMainWindow):
         self.sync_empty()
         self.sync_export()
 
-        if model.matching:
+        if model.matching or self.bottom_first():
             self.show_ranking()
-        elif not self.ranking():
-            self.scroll_to_end()
 
         self._summary = self.grid_summary()
 

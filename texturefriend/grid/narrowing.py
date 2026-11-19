@@ -1,12 +1,3 @@
-"""Which textures the grid is showing, and in what order
-
-A cache is filtered by colour or ranked against a picture, and either way the
-textures holding no picture at all can be left out of it. All three answers
-come out of the scan, which arrives long after the grid has been filled, so
-what is being asked for is kept here and applied whenever there is something
-to apply it against.
-"""
-
 from dataclasses import dataclass, field
 
 from PySide6.QtGui import QColor
@@ -14,6 +5,7 @@ from PySide6.QtGui import QColor
 from texturefriend.cache.color import MATCH_FLOOR
 from texturefriend.cache.likeness import Descriptor
 from texturefriend.cache.scan import Scan
+from texturefriend.grid.sorting import Order
 
 SHORTLIST = 200
 
@@ -33,8 +25,12 @@ class Narrowing:
     incomplete: frozenset[int] = frozenset()
     incomplete_hidden: bool = False
 
-    # what the scan found, which is nothing until it lands
     scan: Scan | None = None
+
+    order: Order = Order.CACHE
+    descending: bool = True
+
+    keys: list[tuple[int, ...] | None] = field(default_factory=list)
 
     @property
     def asking(self) -> bool:
@@ -89,7 +85,7 @@ class Narrowing:
         rows = self.candidates(count)
 
         if not self.asking:
-            return rows
+            return self.ordered(rows)
 
         if self.waiting or self.scan is None:
             return None
@@ -102,12 +98,32 @@ class Narrowing:
         # what a texture holds and what it looks like are different questions,
         # and taking either of them up on the bar puts the other one down
         if self.reference is not None:
-            return self.by_likeness(kept)
+            kept = self.by_likeness(kept)
+        elif self.colors:
+            kept = self.by_color(kept)
 
-        if self.colors:
-            return self.by_color(kept)
+        return self.ordered(kept)
 
-        return kept
+    def ordered(self, rows: list[int]) -> list[int]:
+        if self.order is Order.CACHE:
+            return rows
+
+        keys = self.keys
+
+        known: list[tuple[int, tuple[int, ...]]] = []
+        unknown: list[int] = []
+
+        for row in rows:
+            found = keys[row] if row < len(keys) else None
+
+            if found is None:
+                unknown.append(row)
+            else:
+                known.append((row, found))
+
+        known.sort(key=lambda pair: pair[1], reverse=self.descending)
+
+        return [row for row, _ in known] + unknown
 
     def by_color(self, rows: list[int]) -> list[int]:
         scan = self.scan

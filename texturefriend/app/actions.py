@@ -18,6 +18,16 @@ from texturefriend.cache.export import (
 )
 from texturefriend.cache.recents import RecentCaches
 from texturefriend.cache.suggested import paths as suggested_paths
+from texturefriend.grid.sorting import (
+    ORDER_LABELS,
+    Order,
+    SortChanges,
+    order_label,
+    set_sort_descending,
+    set_sort_order,
+    sort_descending,
+    sort_order,
+)
 from texturefriend.view.cellsize import (
     DEFAULT_CELL_SIZE,
     CellSizeChanges,
@@ -161,10 +171,14 @@ class WindowActions(QObject):
 
         # the entries belong to the owner rather than to this, since a shortcut
         # is only answered by a window the action can be reached from
+        self.build_toggles(owner)
+        self.build_sort(owner)
+
         self.build_file_menu(owner, menu.addMenu("&File"))
         self.build_edit_menu(owner, menu.addMenu("&Edit"))
         self.build_export_menu(owner, menu.addMenu("&Export"))
-        self.build_find_menu(owner, menu.addMenu("Fi&nd"))
+        self.build_filter_menu(owner, menu.addMenu("Fi&lter"))
+        self.build_sort_menu(menu.addMenu("&Sort"))
         self.build_view_menu(owner, menu.addMenu("&View"))
         self.build_app_menu(menu.addMenu("About"))
 
@@ -261,19 +275,19 @@ class WindowActions(QObject):
         # up as until a window has something to say about it
         self.sync_export(0, 0, idle=True)
 
-    def build_find_menu(self, owner: QWidget, find_menu: QMenu) -> None:
-        self.filter_color = QAction("Filter &Color...", owner)
+    def build_filter_menu(self, owner: QWidget, filter_menu: QMenu) -> None:
+        self.filter_color = QAction("&Color...", owner)
         self.filter_color.setStatusTip("Add a color to filter textures by")
         self.filter_color.setEnabled(False)
         triggers(self.filter_color, self.color_picked.emit)
 
-        self.match = QAction("Match &Image...", owner)
+        self.match = QAction("&Image...", owner)
         self.match.setShortcut(QKeySequence(QKeySequence.StandardKey.Find))
         self.match.setStatusTip("Show the textures that look like a picture on disk")
         self.match.setEnabled(False)
         triggers(self.match, self.picture_picked.emit)
 
-        self.paste = QAction("Match Clipboard Image", owner)
+        self.paste = QAction("Clip&board Image", owner)
         self.paste.setShortcut(QKeySequence(QKeySequence.StandardKey.Paste))
         self.paste.setStatusTip("Show the textures that look like the picture in the clipboard")
         self.paste.setEnabled(False)
@@ -284,29 +298,31 @@ class WindowActions(QObject):
         self.disable.setEnabled(False)
         triggers(self.disable, self.filters_disabled.emit)
 
-        find_menu.addAction(self.filter_color)
+        filter_menu.addAction(self.filter_color)
+        filter_menu.addAction(self.match)
+        filter_menu.addAction(self.paste)
 
-        # a colour and a picture are two ways of asking, and taking one up puts
-        # the other down, so the menu keeps them apart the way the bar does
-        find_menu.addSeparator()
-        find_menu.addAction(self.match)
-        find_menu.addAction(self.paste)
+        filter_menu.addSeparator()
+        filter_menu.addAction(self.incomplete)
+        filter_menu.addAction(self.simple)
 
-        find_menu.addSeparator()
-        find_menu.addAction(self.disable)
+        filter_menu.addSeparator()
+        filter_menu.addAction(self.disable)
+
+    def build_sort_menu(self, sort_menu: QMenu) -> None:
+        sort_menu.addActions(list(self._orders.values()))
+
+        sort_menu.addSeparator()
+        sort_menu.addAction(self.ascending)
+        sort_menu.addAction(self.descending)
 
     def build_view_menu(self, owner: QWidget, view_menu: QMenu) -> None:
-        self.build_toggles(owner)
         self.build_zoom(owner)
         self.build_tones(owner)
 
         view_menu.addAction(self.preview)
         view_menu.addAction(self.inspector)
         view_menu.addAction(self.filters)
-
-        view_menu.addSeparator()
-        view_menu.addAction(self.incomplete)
-        view_menu.addAction(self.simple)
 
         view_menu.addSeparator()
         view_menu.addAction(self.zoom_in)
@@ -362,6 +378,39 @@ class WindowActions(QObject):
         self.incomplete = self._toggles[INCOMPLETE_KEY]
         self.simple = self._toggles[SIMPLE_KEY]
 
+    def build_sort(self, owner: QWidget) -> None:
+        self._orders: dict[Order, QAction] = {}
+
+        orders = QActionGroup(owner)
+        orders.setExclusive(True)
+
+        for order, label in ORDER_LABELS.items():
+            entry = QAction(label, owner)
+            entry.setCheckable(True)
+            entry.setActionGroup(orders)
+            triggers(entry, partial(set_sort_order, order))
+
+            self._orders[order] = entry
+
+        self.cache_order = self._orders[Order.CACHE]
+
+        directions = QActionGroup(owner)
+        directions.setExclusive(True)
+
+        self.ascending = QAction("&Ascending", owner)
+        self.ascending.setCheckable(True)
+        self.ascending.setActionGroup(directions)
+        triggers(self.ascending, partial(set_sort_descending, False))
+
+        self.descending = QAction("&Descending", owner)
+        self.descending.setCheckable(True)
+        self.descending.setActionGroup(directions)
+        triggers(self.descending, partial(set_sort_descending, True))
+
+        SortChanges.shared().changed.connect(self.sync_sort)
+
+        self.sync_sort()
+
     def build_zoom(self, owner: QWidget) -> None:
         in_keys = [*QKeySequence.keyBindings(QKeySequence.StandardKey.ZoomIn), QKeySequence("Ctrl+=")]
 
@@ -414,6 +463,7 @@ class WindowActions(QObject):
         CheckerboardChanges.shared().changed.disconnect(self.sync_checkerboard)
         CellSizeChanges.shared().changed.disconnect(self.sync_zoom)
         ExportFormatChanges.shared().changed.disconnect(self.sync_export_format)
+        SortChanges.shared().changed.disconnect(self.sync_sort)
 
     def sync_zoom(self) -> None:
         # the ladder has ends, and an entry that would do nothing says so
@@ -423,6 +473,17 @@ class WindowActions(QObject):
 
     def sync_checkerboard(self) -> None:
         self._tones[grid_tone()].setChecked(True)
+
+    def sync_sort(self) -> None:
+        order = sort_order()
+
+        self._orders[order].setChecked(True)
+
+        (self.descending if sort_descending() else self.ascending).setChecked(True)
+
+        # the cache's own order has no direction to it
+        self.ascending.setEnabled(order is not Order.CACHE)
+        self.descending.setEnabled(order is not Order.CACHE)
 
     def sync_export_format(self) -> None:
         current = export_format()
@@ -456,6 +517,9 @@ class WindowActions(QObject):
             # already acted on it, and is not to be told to do so again
             with QSignalBlocker(entry):
                 entry.setChecked(other is not None and other.isChecked())
+
+        if source is not None:
+            self.cache_order.setText(source.cache_order.text())
 
         for entries, name in ((self._selected_export, "_selected_export"), (self._all_export, "_all_export")):
             theirs: QMenu | None = getattr(source, name) if source is not None else None
@@ -535,6 +599,8 @@ class WindowActions(QObject):
         self.match.setEnabled(opened)
         self.paste.setEnabled(opened)
         self.disable.setEnabled(asking)
+
+        self.cache_order.setText(order_label(Order.CACHE, matching=asking))
 
     def sync_export(self, selected: int, total: int, *, idle: bool) -> None:
         self.copy.setEnabled(selected > 0)
